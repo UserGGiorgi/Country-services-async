@@ -1,4 +1,4 @@
-﻿using CountryServices.Tests.Comparers;
+using CountryServices.Tests.Comparators;
 using NUnit.Framework;
 
 namespace CountryServices.Tests;
@@ -6,98 +6,84 @@ namespace CountryServices.Tests;
 [TestFixture]
 public class CountryCurrencyServiceTests
 {
-    private const string ServiceUrl = "https://restcountries.com/v2";
-    private CountryService countryService;
+    private CountryService countryService = null!;
 
     [OneTimeSetUp]
     public void Setup()
     {
-        this.countryService = new CountryService(ServiceUrl);
-    }
-
-    [OneTimeTearDown]
-    public void Teardown()
-    {
-        this.countryService.Dispose();
+        this.countryService = new CountryService();
     }
 
     [TestCaseSource(typeof(TestCasesData), nameof(TestCasesData.TestCasesForCurrency))]
-    public void GetLocalCurrencyByAlpha2Or3CodeValidCountryCode(string countryCode, LocalCurrency expected)
+    public void GetLocalCurrencyByAlpha2Or3Code_ValidCountryCode(string countryCode, LocalCurrency expected)
     {
         var comparer = new LocalCurrencyComparer();
         var actual = this.countryService.GetLocalCurrencyByAlpha2Or3Code(countryCode);
-        Assert.IsTrue(comparer.Equals(expected, actual));
+        Assert.That(comparer.Equals(expected, actual));
     }
 
     [TestCase(null)]
     [TestCase("")]
     [TestCase(" ")]
     [TestCase("UPSS")]
-    public void GetLocalCurrencyByAlpha2Or3CodeInvalidCountryCodeThrowArgumentException(string? countryCode)
-    {
-        Assert.Throws<ArgumentException>(() =>
+    public void GetLocalCurrencyByAlpha2Or3Code_InvalidCountryCode_ThrowArgumentException(string? countryCode)
+        => Assert.Throws<ArgumentException>(() =>
         {
-            _ = new CountryService(ServiceUrl).GetLocalCurrencyByAlpha2Or3Code(countryCode);
+            _ = new CountryService().GetLocalCurrencyByAlpha2Or3Code(countryCode);
         });
-    }
 
     [TestCaseSource(typeof(TestCasesData), nameof(TestCasesData.TestCasesForCurrency))]
-    public async Task GetLocalCurrencyByAlpha2Or3CodeAsyncValidCountryCode(string countryCode, LocalCurrency? expected)
+    public async Task GetLocalCurrencyByAlpha2Or3CodeAsync_ValidCountryCode(string? countryCode, LocalCurrency? expected)
     {
         var comparer = new LocalCurrencyComparer();
-        var actual = await this.countryService.GetLocalCurrencyByAlpha2Or3CodeAsync(countryCode, CancellationToken.None);
-        Assert.IsTrue(comparer.Equals(expected, actual));
+        var actual =
+            await this.countryService.GetLocalCurrencyByAlpha2Or3CodeAsync(countryCode, CancellationToken.None);
+        Assert.That(comparer.Equals(expected, actual));
     }
 
     [TestCase(null)]
     [TestCase("")]
     [TestCase(" ")]
     [TestCase("UPSS")]
-    public void GetLocalCurrencyByAlpha2Or3CodeAsyncInvalidCountryCodeThrowArgumentException(string? countryCode)
-    {
-        Assert.ThrowsAsync<ArgumentException>(async () =>
+    public void GetLocalCurrencyByAlpha2Or3CodeAsync_InvalidCountryCode_ThrowArgumentException(string? countryCode)
+        => Assert.ThrowsAsync<ArgumentException>(async () =>
         {
-            _ = await new CountryService(ServiceUrl).GetLocalCurrencyByAlpha2Or3CodeAsync(countryCode, CancellationToken.None);
+            _ = await new CountryService().GetLocalCurrencyByAlpha2Or3CodeAsync(countryCode, CancellationToken.None);
         });
-    }
 
     [TestCaseSource(typeof(TestCasesData), nameof(TestCasesData.TestCasesForCountryInfo))]
-    public void GetCountryInfoByCapitalValidCapitalName(string capitalName, CountryInfo expected)
+    public void GetCountryInfoByCapital_ValidCapitalName(string capitalName, Country expected)
     {
         var comparer = new CountryInfoComparer();
         var actual = this.countryService.GetCountryInfoByCapital(capitalName);
-        Assert.IsTrue(comparer.Equals(expected, actual));
+        Assert.That(comparer.Equals(expected, actual));
     }
 
     [TestCase(null)]
     [TestCase("")]
     [TestCase(" ")]
     [TestCase("UPSS")]
-    public void GetCountryInfoByCapitalInvalidCapitalNameThrowArgumentException(string? capitalName)
-    {
-        Assert.Throws<ArgumentException>(() =>
+    public void GetCountryInfoByCapital_InvalidCapitalName_ThrowArgumentException(string? capitalName)
+        => Assert.Throws<ArgumentException>(() =>
         {
-            _ = new CountryService(ServiceUrl).GetCountryInfoByCapital(capitalName);
+            _ = new CountryService().GetCountryInfoByCapital(capitalName);
         });
-    }
 
     [TestCaseSource(typeof(TestCasesData), nameof(TestCasesData.TestCasesForCountryInfo))]
-    public async Task GetCountryInfoByCapitalAsyncValidCapitalName(string capitalName, CountryInfo expected)
+    public async Task GetCountryInfoByCapitalAsync_ValidCapitalName(string capitalName, Country expected)
     {
         var comparer = new CountryInfoComparer();
         var actual = await this.countryService.GetCountryInfoByCapitalAsync(capitalName, CancellationToken.None);
-        Assert.IsTrue(comparer.Equals(expected, actual));
+        Assert.That(comparer.Equals(expected, actual));
     }
 
     [TestCase(null)]
     [TestCase("")]
     [TestCase(" ")]
     [TestCase("UPSS")]
-    public void GetCountryInfoByCapitalAsyncInvalidCapitalNameThrowArgumentException(string? capitalName)
-    {
-        Assert.ThrowsAsync<ArgumentException>(async () =>
+    public void GetCountryInfoByCapitalAsync_InvalidCapitalName_ThrowArgumentException(string? capitalName)
+        => Assert.ThrowsAsync<ArgumentException>(async () =>
         {
-            _ = await new CountryService(ServiceUrl).GetCountryInfoByCapitalAsync(capitalName, CancellationToken.None);
+            _ = await new CountryService().GetCountryInfoByCapitalAsync(capitalName, CancellationToken.None);
         });
-    }
 }
