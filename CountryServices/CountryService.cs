@@ -89,6 +89,7 @@ public class CountryService : ICountryService
         return await this.FetchLocalCurrencyAsync(alpha2Or3Code, token);
     }
 
+
     /// <summary>
     /// Gets information about the country by the country capital synchronously.
     /// </summary>
@@ -195,11 +196,11 @@ public class CountryService : ICountryService
         }
     }
 
-    private static void ValidateParameters(string? capital)
+    private static void ValidateParameters(string? alpha2Or3Code)
     {
-        if (string.IsNullOrWhiteSpace(capital))
+        if (string.IsNullOrWhiteSpace(alpha2Or3Code))
         {
-            throw new ArgumentException("Capital name cannot be null, empty, or whitespace.", nameof(capital));
+            throw new ArgumentException("Country code cannot be null, empty, or whitespace.", nameof(alpha2Or3Code));
         }
     }
 
