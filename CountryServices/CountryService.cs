@@ -79,51 +79,14 @@ public class CountryService : ICountryService
     /// <exception cref="ArgumentException">Throw if countryCode is null, empty, whitespace or invalid country code.</exception>
     public async Task<LocalCurrency> GetLocalCurrencyByAlpha2Or3CodeAsync(string? alpha2Or3Code, CancellationToken token)
     {
-        if (string.IsNullOrWhiteSpace(alpha2Or3Code))
-        {
-            throw new ArgumentException("Country code cannot be null, empty, or whitespace.", nameof(alpha2Or3Code));
-        }
-
-        // Check cache
+        ValidateParameters(alpha2Or3Code);
+        ArgumentNullException.ThrowIfNull(alpha2Or3Code);
         if (this.currencyCountries.TryGetValue(alpha2Or3Code, out var weakCurrency) && weakCurrency.TryGetTarget(out var cachedCurrency))
         {
             return cachedCurrency;
         }
 
-        try
-        {
-            using var httpClient = new HttpClient();
-            var uri = new Uri($"{ServiceUrl}/alpha/{alpha2Or3Code}");
-            var response = await httpClient.GetAsync(uri, token);
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ArgumentException($"Invalid country code: {alpha2Or3Code}", nameof(alpha2Or3Code));
-            }
-
-            var jsonResponse = await response.Content.ReadAsStringAsync(token);
-            var countryInfo = JsonSerializer.Deserialize<LocalCurrencyInfo>(jsonResponse);
-
-            if (countryInfo == null || countryInfo.Currencies == null || countryInfo.Currencies.Length == 0)
-            {
-                throw new InvalidOperationException($"No currency information found for country code: {alpha2Or3Code}");
-            }
-
-            var currencyData = countryInfo.Currencies[0];
-            var localCurrency = new LocalCurrency
-            {
-                CountryName = countryInfo.CountryName ?? "Unknown",
-                CurrencyCode = currencyData.Code ?? "Unknown",
-                CurrencySymbol = currencyData.Symbol ?? "Unknown",
-            };
-
-            // Cache the result
-            this.currencyCountries[alpha2Or3Code] = new WeakReference<LocalCurrency>(localCurrency);
-            return localCurrency;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new ArgumentException($"Error retrieving currency information for country code: {alpha2Or3Code}.", ex);
-        }
+        return await this.FetchLocalCurrencyAsync(alpha2Or3Code, token);
     }
 
     /// <summary>
@@ -152,12 +115,9 @@ public class CountryService : ICountryService
     /// <exception cref="ArgumentException">Throw if the capital name is null, empty, whitespace or nonexistent.</exception>
     public async Task<Country> GetCountryInfoByCapitalAsync(string? capital, CancellationToken token)
     {
-        if (string.IsNullOrWhiteSpace(capital))
-        {
-            throw new ArgumentException("Capital name cannot be null, empty, or whitespace.", nameof(capital));
-        }
+        ValidateParameters(capital);
+        ArgumentNullException.ThrowIfNull(capital);
 
-        // Directly fetch from the API
         return await FetchCountryByCapitalFromApiAsync(capital, token);
     }
 
@@ -232,6 +192,53 @@ public class CountryService : ICountryService
         catch (HttpRequestException ex)
         {
             throw new ArgumentException($"Error retrieving country information for capital: {capital}.", ex);
+        }
+    }
+
+    private static void ValidateParameters(string? capital)
+    {
+        if (string.IsNullOrWhiteSpace(capital))
+        {
+            throw new ArgumentException("Capital name cannot be null, empty, or whitespace.", nameof(capital));
+        }
+    }
+
+    private async Task<LocalCurrency> FetchLocalCurrencyAsync(string alpha2Or3Code, CancellationToken token)
+    {
+        try
+        {
+            using var httpClient = new HttpClient();
+            var uri = new Uri($"{ServiceUrl}/alpha/{alpha2Or3Code}");
+            var response = await httpClient.GetAsync(uri, token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new ArgumentException($"Invalid country code: {alpha2Or3Code}", nameof(alpha2Or3Code));
+            }
+
+            var jsonResponse = await response.Content.ReadAsStringAsync(token);
+            var countryInfo = JsonSerializer.Deserialize<LocalCurrencyInfo>(jsonResponse);
+
+            if (countryInfo == null || countryInfo.Currencies == null || countryInfo.Currencies.Length == 0)
+            {
+                throw new InvalidOperationException($"No currency information found for country code: {alpha2Or3Code}");
+            }
+
+            var currencyData = countryInfo.Currencies[0];
+            var localCurrency = new LocalCurrency
+            {
+                CountryName = countryInfo.CountryName ?? "Unknown",
+                CurrencyCode = currencyData.Code ?? "Unknown",
+                CurrencySymbol = currencyData.Symbol ?? "Unknown",
+            };
+
+            // Cache the result
+            this.currencyCountries[alpha2Or3Code] = new WeakReference<LocalCurrency>(localCurrency);
+            return localCurrency;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new ArgumentException($"Error retrieving currency information for country code: {alpha2Or3Code}.", ex);
         }
     }
 }
